@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -24,10 +24,64 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import GetLocation, {Location} from 'react-native-get-location';
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
+
+interface WeatherListItem {
+  dt: number;
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    pressure: number;
+    sea_level: number;
+    grnd_level: number;
+    humidity: number;
+    temp_kf: number;
+  };
+  weather: Array<any>;
+  clouds: {
+    all: number;
+  };
+  wind: {
+    speed: number;
+    deg: number;
+    gust: number;
+  };
+  visibility: number;
+  pop: number;
+  rain: {
+    '3h': number;
+  };
+  sys: {
+    pod: string;
+  };
+  dt_txt: string;
+}
+
+interface WeatherData {
+  cod: string;
+  message: number;
+  cnt: number;
+  list: Array<WeatherListItem>;
+  city: {
+    id: number;
+    name: string;
+    coord: {
+      lat: number;
+      lon: number;
+    };
+    country: string;
+    population: number;
+    timezone: number;
+    sunrise: number;
+    sunset: number;
+  };
+}
 
 function Section({children, title}: SectionProps): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -62,6 +116,32 @@ function App(): React.JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
+  const [location, setLocation] = useState<Location | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  useEffect(() => {
+    GetLocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 60000,
+    })
+      .then(loc => {
+        setLocation(loc);
+      })
+      .catch(error => {
+        const {code, message} = error;
+        console.warn(code, message);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (location) {
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${location.latitude}&lon=${location.longitude}&appid=${process.env.TOKEN}`;
+      fetch(url)
+        .then(res => res.json())
+        .then((data: WeatherData) => {
+          setWeatherData(data);
+        });
+    }
+  }, [location]);
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar
