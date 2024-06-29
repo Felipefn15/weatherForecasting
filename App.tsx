@@ -7,28 +7,17 @@
 
 import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
+import {Text, Card, ListItem, SearchBar} from '@rneui/themed';
 import {
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
   useColorScheme,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 import GetLocation, {Location} from 'react-native-get-location';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
 
 interface WeatherListItem {
   dt: number;
@@ -83,32 +72,6 @@ interface WeatherData {
   };
 }
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -118,6 +81,8 @@ function App(): React.JSX.Element {
 
   const [location, setLocation] = useState<Location | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [metric, setMetric] = useState('metric');
+  const today = new Date();
   useEffect(() => {
     GetLocation.getCurrentPosition({
       enableHighAccuracy: true,
@@ -134,42 +99,71 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     if (location) {
-      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${location.latitude}&lon=${location.longitude}&appid=${process.env.TOKEN}`;
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${location.latitude}&lon=${location.longitude}&units=${metric}&appid=${process.env.TOKEN}`;
       fetch(url)
         .then(res => res.json())
         .then((data: WeatherData) => {
           setWeatherData(data);
         });
     }
-  }, [location]);
+  }, [location, metric]);
+
   return (
     <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+      <SearchBar
+        placeholder="Type city name"
+        // onChangeText={updateSearch}
+        value={null || weatherData?.city.name}
+        lightTheme={true}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+      <ScrollView style={{marginBottom: 80}}>
+        <View style={styles.container}>
+          <Card>
+            <Card.Title>
+              {weatherData?.city.name} - {today.getDate()}/{today.getMonth()}
+            </Card.Title>
+            <Card.Divider />
+            <Text style={styles.fonts}>
+              {weatherData?.list[0].weather[0].description}
+            </Text>
+            <Text style={styles.fonts}>{weatherData?.list[0].main.temp}°</Text>
+          </Card>
+          <Card>
+            <Card.Title>{weatherData?.city.name} - Next 5 days</Card.Title>
+            <Card.Divider />
+            <ListItem>
+              <ListItem.Content>
+                {weatherData?.list
+                  .filter(item => item.dt > today.getDate())
+                  .slice(0, 5)
+                  .map((item, index) => {
+                    const date = new Date(item.dt * 1000);
+                    return (
+                      <View
+                        key={index}
+                        style={{
+                          flexDirection: 'column',
+                          width: '100%',
+                          padding: 5,
+                        }}>
+                        <ListItem.Title>
+                          {date.getDate()}/{date.getMonth()}
+                        </ListItem.Title>
+                        <ListItem.Subtitle>
+                          <Text style={styles.fonts}>
+                            {item.weather[0].description}
+                          </Text>
+                          <Text style={styles.fonts}>
+                            {item.main.temp}° {metric === 'metric' ? 'C' : 'F'}
+                          </Text>
+                        </ListItem.Subtitle>
+                        <Card.Divider style={{marginTop: 10}} />
+                      </View>
+                    );
+                  })}
+              </ListItem.Content>
+            </ListItem>
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -192,6 +186,25 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '700',
+  },
+  container: {
+    flex: 1,
+  },
+  fonts: {
+    marginBottom: 8,
+  },
+  user: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  image: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  name: {
+    fontSize: 16,
+    marginTop: 5,
   },
 });
 
