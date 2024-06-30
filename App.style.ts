@@ -39,6 +39,25 @@ export const styles = StyleSheet.create({
     height: 30,
     marginRight: 10,
   },
+  cardContentWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  iconContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+  },
+  item: {
+    aspectRatio: 1,
+    width: '100%',
+    height: '100%',
+    flex: 1,
+  },
   name: {
     fontSize: 16,
     marginTop: 5,

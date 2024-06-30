@@ -1,17 +1,21 @@
 import React, {useEffect, useState} from 'react';
 import {Text, Card, ListItem, SearchBar, Button} from '@rneui/themed';
 import {
+  ActivityIndicator,
   Alert,
   SafeAreaView,
   ScrollView,
   useColorScheme,
   View,
+  Image,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import GetLocation, {Location} from 'react-native-get-location';
 import {styles} from './App.style';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import sunnyIcon from './icons/sun.png';
 
 // Debounce function (replace with your preferred debounce library)
 const debounce = (
@@ -96,6 +100,7 @@ function App(): React.JSX.Element {
   const [metric, setMetric] = useState('metric');
   const [searchTerm, setSearchTerm] = useState('');
   const today = new Date();
+  today.setUTCHours(23, 59, 59, 999);
 
   const debouncedSearch = debounce(async (term: string) => {
     if (term.length > 2) {
@@ -105,7 +110,7 @@ function App(): React.JSX.Element {
       const data = await response.json();
       if (data.cod === '200') {
         const filteredData = data.list.filter(
-          (item: any, index: number) => index % 8 === 0,
+          (index: number) => index % 8 === 0,
         );
         setWeatherData({
           ...data,
@@ -191,6 +196,22 @@ function App(): React.JSX.Element {
     }
   };
 
+  const handleGetIconUrl = (weather: string) => {
+    switch (weather) {
+      case 'clear sky':
+        return require('./icons/sun.png');
+      case 'clouds':
+        return require('./icons/cloud.png');
+      case 'rain':
+        return require('./icons/rain.png');
+      case 'thunderstorm':
+        return require('./icons/storm.png');
+      case 'few clouds':
+        return require('./icons/weather.png');
+      default:
+        return require('./icons/sun.png');
+    }
+  };
   return (
     <SafeAreaView style={backgroundStyle}>
       <View style={styles.searchBar}>
@@ -200,6 +221,7 @@ function App(): React.JSX.Element {
           value={searchTerm}
           lightTheme={true}
           leftIconContainerStyle={{display: 'none'}}
+          rightIconContainerStyle={{display: 'none'}}
         />
         <View style={styles.buttonContainer}>
           <Button
@@ -223,23 +245,43 @@ function App(): React.JSX.Element {
       <ScrollView style={styles.scrollview}>
         <View style={styles.container}>
           <Card>
-            <Card.Title>
-              {weatherData?.city.name} - {today.getDate()}/{today.getMonth()}
-            </Card.Title>
+            <Card.Title>{weatherData?.city.name}</Card.Title>
             <Card.Divider />
-            <Text style={styles.fonts}>
-              {weatherData?.list[0].weather[0].description}
-            </Text>
-            <Text style={styles.fonts}>
-              {weatherData?.list[0].main.temp}°{' '}
-              {metric === 'metric' ? 'C' : 'F'}
-            </Text>
-            <Text style={styles.fonts}>
-              Humidity: {weatherData?.list[0].main.humidity}%
-            </Text>
-            <Text style={styles.fonts}>
-              Wind Speed: {weatherData?.list[0].wind.speed}
-            </Text>
+            <View style={styles.cardContentWrapper}>
+              <View>
+                <ListItem.Title>
+                  {today.getDate()}/{today.getMonth()} -{' '}
+                  {weatherData?.list[0].main.temp}°{' '}
+                  {metric === 'metric' ? 'C' : 'F'}
+                </ListItem.Title>
+                <ListItem.Subtitle style={styles.subTitle}>
+                  <Text style={styles.fonts}>
+                    {weatherData?.list[0].weather[0].description}
+                  </Text>
+                </ListItem.Subtitle>
+                <ListItem.Title>Humidity:</ListItem.Title>
+                <ListItem.Subtitle style={styles.subTitle}>
+                  <Text style={styles.fonts}>
+                    {weatherData?.list[0].main.humidity}%
+                  </Text>
+                </ListItem.Subtitle>
+                <ListItem.Title>Wind Speed:</ListItem.Title>
+                <ListItem.Subtitle style={styles.subTitle}>
+                  <Text style={styles.fonts}>
+                    {weatherData?.list[0].wind.speed}
+                  </Text>
+                </ListItem.Subtitle>
+              </View>
+              <View style={styles.iconContainer}>
+                <Image
+                  source={handleGetIconUrl(
+                    weatherData?.list[0].weather[0].description || 'Sunny',
+                  )}
+                  style={styles.item}
+                  // PlaceholderContent={<ActivityIndicator />}
+                />
+              </View>
+            </View>
           </Card>
           <Card>
             <Card.Title>{weatherData?.city.name} - Next 5 days</Card.Title>
@@ -247,32 +289,42 @@ function App(): React.JSX.Element {
             <ListItem>
               <ListItem.Content>
                 {weatherData?.list
-                  .filter(item => item.dt > today.getDate())
+                  .filter(item => item.dt > Math.floor(today.getTime() / 1000))
                   .slice(0, 5)
                   .map((item, index) => {
                     const date = new Date(item.dt * 1000);
                     return (
-                      <View key={index} style={styles.listItem}>
-                        <ListItem.Title>
-                          {date.getDate()}/{date.getMonth()} - {item.main.temp}°{' '}
-                          {metric === 'metric' ? 'C' : 'F'}
-                        </ListItem.Title>
-                        <ListItem.Subtitle style={styles.subTitle}>
-                          <Text style={styles.fonts}>
-                            {item.weather[0].description}
-                          </Text>
-                        </ListItem.Subtitle>
-                        <ListItem.Title>Humidity:</ListItem.Title>
-                        <ListItem.Subtitle style={styles.subTitle}>
-                          <Text style={styles.fonts}>
-                            {item.main.humidity}%
-                          </Text>
-                        </ListItem.Subtitle>
-                        <ListItem.Title>Wind Speed:</ListItem.Title>
-                        <ListItem.Subtitle style={styles.subTitle}>
-                          <Text style={styles.fonts}>{item.wind.speed}</Text>
-                        </ListItem.Subtitle>
-                        <Card.Divider style={styles.divider} />
+                      <View key={index} style={styles.cardContentWrapper}>
+                        <View style={styles.listItem}>
+                          <ListItem.Title>
+                            {date.getDate()}/{date.getMonth()} -{' '}
+                            {item.main.temp}° {metric === 'metric' ? 'C' : 'F'}
+                          </ListItem.Title>
+                          <ListItem.Subtitle style={styles.subTitle}>
+                            <Text style={styles.fonts}>
+                              {item.weather[0].description}
+                            </Text>
+                          </ListItem.Subtitle>
+                          <ListItem.Title>Humidity:</ListItem.Title>
+                          <ListItem.Subtitle style={styles.subTitle}>
+                            <Text style={styles.fonts}>
+                              {item.main.humidity}%
+                            </Text>
+                          </ListItem.Subtitle>
+                          <ListItem.Title>Wind Speed:</ListItem.Title>
+                          <ListItem.Subtitle style={styles.subTitle}>
+                            <Text style={styles.fonts}>{item.wind.speed}</Text>
+                          </ListItem.Subtitle>
+                          <Card.Divider style={styles.divider} />
+                        </View>
+                        <View style={styles.iconContainer}>
+                          <Image
+                            source={handleGetIconUrl(
+                              item.weather[0].description || 'Sunny',
+                            )}
+                            style={styles.item}
+                          />
+                        </View>
                       </View>
                     );
                   })}
