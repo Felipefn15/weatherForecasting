@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Text, Card, ListItem, SearchBar, Button} from '@rneui/themed';
 import {
-  ActivityIndicator,
   Alert,
   SafeAreaView,
   ScrollView,
@@ -14,8 +13,6 @@ import {Colors} from 'react-native/Libraries/NewAppScreen';
 import GetLocation, {Location} from 'react-native-get-location';
 import {styles} from './App.style';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import sunnyIcon from './icons/sun.png';
 
 // Debounce function (replace with your preferred debounce library)
 const debounce = (
@@ -108,11 +105,22 @@ function App(): React.JSX.Element {
       const url = `https://api.openweathermap.org/data/2.5/forecast?q=${term}&units=${metric}&appid=${process.env.TOKEN}`;
       const response = await fetch(url);
       const data = await response.json();
+      let filteredData: WeatherListItem[] = [];
       if (data.cod === '200') {
-        const filteredData = data.list.filter(
-          (index: number) => index % 8 === 0,
-        );
-        setWeatherData(data);
+        data.list.map((item: WeatherListItem) => {
+          if (
+            filteredData.filter(
+              (i: any) => i.dt_txt.split(' ')[0] === item.dt_txt.split(' ')[0],
+            ).length < 1 &&
+            item.dt_txt.split(' ')[0] !== today.toISOString().split('T')[0]
+          ) {
+            filteredData.push(item);
+          }
+        });
+        setWeatherData({
+          ...data,
+          list: filteredData,
+        });
       } else {
         Alert.alert('Error', data.message);
         setSearchTerm(''); // Clear search term if API call fails
@@ -159,7 +167,10 @@ function App(): React.JSX.Element {
             (item, index) => index % 8 === 0,
           );
           setSearchTerm(data.city.name);
-          setWeatherData(data);
+          setWeatherData({
+            ...data,
+            list: filteredData,
+          });
         })
         .catch(error => {
           console.warn('Error fetching weather data:', error);
@@ -284,46 +295,44 @@ function App(): React.JSX.Element {
             <Card.Divider />
             <ListItem>
               <ListItem.Content>
-                {weatherData?.list
-                  .filter(item => item.dt > Math.floor(today.getTime() / 1000))
-                  .slice(0, 5)
-                  .map((item, index) => {
-                    const date = new Date(item.dt * 1000);
-                    return (
-                      <View key={index} style={styles.cardContentWrapper}>
-                        <View style={styles.listItem}>
-                          <ListItem.Title>
-                            {date.getDate()}/{date.getMonth()} -{' '}
-                            {item.main.temp}° {metric === 'metric' ? 'C' : 'F'}
-                          </ListItem.Title>
-                          <ListItem.Subtitle style={styles.subTitle}>
-                            <Text style={styles.fonts}>
-                              {item.weather[0].description}
-                            </Text>
-                          </ListItem.Subtitle>
-                          <ListItem.Title>Humidity:</ListItem.Title>
-                          <ListItem.Subtitle style={styles.subTitle}>
-                            <Text style={styles.fonts}>
-                              {item.main.humidity}%
-                            </Text>
-                          </ListItem.Subtitle>
-                          <ListItem.Title>Wind Speed:</ListItem.Title>
-                          <ListItem.Subtitle style={styles.subTitle}>
-                            <Text style={styles.fonts}>{item.wind.speed}</Text>
-                          </ListItem.Subtitle>
-                          <Card.Divider style={styles.divider} />
-                        </View>
-                        <View style={styles.iconContainer}>
-                          <Image
-                            source={handleGetIconUrl(
-                              item.weather[0].description || 'Sunny',
-                            )}
-                            style={styles.item}
-                          />
-                        </View>
+                {weatherData?.list.slice(0, 5).map((item, index) => {
+                  console.log(item);
+                  const date = new Date(item.dt * 1000);
+                  return (
+                    <View key={index} style={styles.cardContentWrapper}>
+                      <View style={styles.listItem}>
+                        <ListItem.Title>
+                          {date.getDate()}/{date.getMonth()} - {item.main.temp}°{' '}
+                          {metric === 'metric' ? 'C' : 'F'}
+                        </ListItem.Title>
+                        <ListItem.Subtitle style={styles.subTitle}>
+                          <Text style={styles.fonts}>
+                            {item.weather[0].description}
+                          </Text>
+                        </ListItem.Subtitle>
+                        <ListItem.Title>Humidity:</ListItem.Title>
+                        <ListItem.Subtitle style={styles.subTitle}>
+                          <Text style={styles.fonts}>
+                            {item.main.humidity}%
+                          </Text>
+                        </ListItem.Subtitle>
+                        <ListItem.Title>Wind Speed:</ListItem.Title>
+                        <ListItem.Subtitle style={styles.subTitle}>
+                          <Text style={styles.fonts}>{item.wind.speed}</Text>
+                        </ListItem.Subtitle>
+                        <Card.Divider style={styles.divider} />
                       </View>
-                    );
-                  })}
+                      <View style={styles.iconContainer}>
+                        <Image
+                          source={handleGetIconUrl(
+                            item.weather[0].description || 'Sunny',
+                          )}
+                          style={styles.item}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
               </ListItem.Content>
             </ListItem>
           </Card>
