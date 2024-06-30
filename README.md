@@ -1,15 +1,17 @@
-## React Weather App
+## React Weather App with Location History
 
-This is a React weather application that allows users to search for weather information for their current location or a specific city.
+This React weather application allows users to search for weather information for their current location or a specific city. It also stores a history of previously searched locations for easy access.
 
 ### Features
 
-* Displays current weather conditions for the searched location  
-* Shows a 5-day forecast for the location  
-* Uses the OpenWeatherMap API to fetch weather data  
+* Displays current weather conditions for the searched location
+* Shows a 5-day forecast for the location
+* Uses the OpenWeatherMap API to fetch weather data
 * Debounces search terms to avoid excessive API calls
+* Stores a history of searched locations using AsyncStorage
+* Allows switching between metric and imperial units
 
-### Installation
+### Usage
 
 1. **Clone the repository:**
 
@@ -85,6 +87,7 @@ This project can be run on a mobile device or emulator using React Native.
 * React Native Elements (UI components)
 * React Native Get Location (geolocation)
 * OpenWeatherMap API (weather data)
+* AsyncStorage (for storing search history)
 
 ### Contributing
 
