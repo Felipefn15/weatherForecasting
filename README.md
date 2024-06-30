@@ -1,79 +1,95 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+## React Weather App
 
-# Getting Started
+This is a React weather application that allows users to search for weather information for their current location or a specific city.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+### Features
 
-## Step 1: Start the Metro Server
+* Displays current weather conditions for the searched location  
+* Shows a 5-day forecast for the location  
+* Uses the OpenWeatherMap API to fetch weather data  
+* Debounces search terms to avoid excessive API calls
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+### Installation
 
-To start Metro, run the following command from the _root_ of your React Native project:
+1. **Clone the repository:**
 
-```bash
-# using npm
-npm start
+   ```bash
+   git clone https://github.com/your-username/weatherForecasting.git
+   ```
 
-# OR using Yarn
-yarn start
-```
+2. **Install dependencies:**
 
-## Step 2: Start your Application
+   Navigate to the project directory and run:
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+   ```bash
+   cd weatherForecasting
+   npm install
+   ```
 
-### For Android
+3. **Configure API Key:**
 
-```bash
-# using npm
-npm run android
+   - Create a file named `.env` in the project root directory.
+   - Add the following line to the `.env` file, replacing `<YOUR_API_KEY>` with your OpenWeatherMap API token:
 
-# OR using Yarn
-yarn android
-```
+   ```
+   TOKEN=<YOUR_API_KEY>
+   ```
 
-### For iOS
+   **Important:** Never commit the `.env` file to version control.
 
-```bash
-# using npm
-npm run ios
+### Running the App (Mobile Development)
 
-# OR using Yarn
-yarn ios
-```
+This project can be run on a mobile device or emulator using React Native. 
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+**Prerequisites:**
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+* Node.js and npm (or yarn) installed on your development machine.
+* An Android device or emulator with developer options enabled, or an iOS device with Xcode installed.
 
-## Step 3: Modifying your App
+**Instructions:**
 
-Now that you have successfully run the app, let's modify it.
+1. **Connect your device or start your emulator.**
+2. **Run the app for your desired platform:**
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+   - **Android:**
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+     ```bash
+     npm run android
+     ```
 
-## Congratulations! :tada:
+   - **iOS:**
 
-You've successfully run and modified your React Native App. :partying_face:
+     ```bash
+     npm run ios
+     ```
 
-### Now what?
+### Running the App (Development Mode)
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+**For development and testing purposes, you can run the app in a simulator without needing a physical device.**
 
-# Troubleshooting
+1. **Start the development server:**
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+   ```bash
+   npm start
+   ```
 
-# Learn More
+2. The app will start in a development server, usually at `http://localhost:19000/`. You can access it in a web browser on your development machine to interact with the weather app.
 
-To learn more about React Native, take a look at the following resources:
+**Note:** This mode is for development and may not reflect the final performance of the mobile app.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+### Tech Stack
+
+* React
+* React Native (for mobile development)
+* React Native Elements (UI components)
+* React Native Get Location (geolocation)
+* OpenWeatherMap API (weather data)
+
+### Contributing
+
+Pull requests are welcome. Please make sure to follow the coding style and conventions used in the project.
+
+### License
+
+MIT License
