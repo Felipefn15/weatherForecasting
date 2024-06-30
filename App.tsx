@@ -1,23 +1,28 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React, {useEffect, useState} from 'react';
-import type {PropsWithChildren} from 'react';
-import {Text, Card, ListItem, SearchBar} from '@rneui/themed';
+import {Text, Card, ListItem, SearchBar, Button} from '@rneui/themed';
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   useColorScheme,
   View,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import GetLocation, {Location} from 'react-native-get-location';
+import {styles} from './App.style';
+
+// Debounce function (replace with your preferred debounce library)
+const debounce = (
+  func: {(term: string): Promise<void>; apply?: any},
+  wait: number | undefined,
+) => {
+  let timeout: string | number | NodeJS.Timeout | undefined;
+  return (...args: any) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+};
 
 interface WeatherListItem {
   dt: number;
@@ -82,7 +87,32 @@ function App(): React.JSX.Element {
   const [location, setLocation] = useState<Location | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [metric, setMetric] = useState('metric');
+  const [searchTerm, setSearchTerm] = useState('');
   const today = new Date();
+
+  const debouncedSearch = debounce(async (term: string) => {
+    if (term.length > 2) {
+      // Replace with your API call using the search term
+      const url = `https://api.openweathermap.org/data/2.5/forecast?q=${term}&units=${metric}&appid=${process.env.TOKEN}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.cod === '200') {
+        const filteredData = data.list.filter(
+          (item: any, index: number) => index % 8 === 0,
+        );
+        setWeatherData({
+          ...data,
+          list: filteredData,
+        });
+      } else {
+        Alert.alert('Error', data.message);
+        setSearchTerm(''); // Clear search term if API call fails
+      }
+    } else {
+      setWeatherData(null); // Clear data if search term is too short
+    }
+  }, 500); // Adjust debounce time as needed (milliseconds)
+
   useEffect(() => {
     GetLocation.getCurrentPosition({
       enableHighAccuracy: true,
@@ -92,8 +122,8 @@ function App(): React.JSX.Element {
         setLocation(loc);
       })
       .catch(error => {
-        const {code, message} = error;
-        console.warn(code, message);
+        const {message} = error;
+        Alert.alert('Error', message);
       });
   }, []);
 
@@ -103,20 +133,45 @@ function App(): React.JSX.Element {
       fetch(url)
         .then(res => res.json())
         .then((data: WeatherData) => {
-          setWeatherData(data);
+          const filteredData = data.list.filter(
+            (item, index) => index % 8 === 0,
+          );
+          setWeatherData({
+            ...data,
+            list: filteredData,
+          });
+        })
+        .catch(error => {
+          console.warn('Error fetching weather data:', error);
         });
     }
   }, [location, metric]);
 
+  const handleSearchChange = (text: string) => {
+    setSearchTerm(text);
+  };
+
   return (
     <SafeAreaView style={backgroundStyle}>
-      <SearchBar
-        placeholder="Type city name"
-        // onChangeText={updateSearch}
-        value={null || weatherData?.city.name}
-        lightTheme={true}
-      />
-      <ScrollView style={{marginBottom: 80}}>
+      <View style={styles.searchBar}>
+        <SearchBar
+          placeholder="Type city name"
+          onChangeText={handleSearchChange} // Call handleSearchChange on text change
+          value={searchTerm || weatherData?.city.name}
+          lightTheme={true}
+          leftIconContainerStyle={{display: 'none'}}
+        />
+        <Button
+          onPress={() => {
+            if (searchTerm.length > 2) {
+              debouncedSearch(searchTerm); // Trigger search if location is
+            }
+          }}
+          title="Search"
+          type="clear"
+        />
+      </View>
+      <ScrollView style={styles.scrollview}>
         <View style={styles.container}>
           <Card>
             <Card.Title>
@@ -127,6 +182,12 @@ function App(): React.JSX.Element {
               {weatherData?.list[0].weather[0].description}
             </Text>
             <Text style={styles.fonts}>{weatherData?.list[0].main.temp}°</Text>
+            <Text style={styles.fonts}>
+              Humidity: {weatherData?.list[0].main.humidity}%
+            </Text>
+            <Text style={styles.fonts}>
+              Wind Speed: {weatherData?.list[0].wind.speed}
+            </Text>
           </Card>
           <Card>
             <Card.Title>{weatherData?.city.name} - Next 5 days</Card.Title>
@@ -139,25 +200,27 @@ function App(): React.JSX.Element {
                   .map((item, index) => {
                     const date = new Date(item.dt * 1000);
                     return (
-                      <View
-                        key={index}
-                        style={{
-                          flexDirection: 'column',
-                          width: '100%',
-                          padding: 5,
-                        }}>
+                      <View key={index} style={styles.listItem}>
                         <ListItem.Title>
-                          {date.getDate()}/{date.getMonth()}
+                          {date.getDate()}/{date.getMonth()} - {item.main.temp}°{' '}
+                          {metric === 'metric' ? 'C' : 'F'}
                         </ListItem.Title>
-                        <ListItem.Subtitle>
+                        <ListItem.Subtitle style={styles.subTitle}>
                           <Text style={styles.fonts}>
                             {item.weather[0].description}
                           </Text>
+                        </ListItem.Subtitle>
+                        <ListItem.Title>Humidity:</ListItem.Title>
+                        <ListItem.Subtitle style={styles.subTitle}>
                           <Text style={styles.fonts}>
-                            {item.main.temp}° {metric === 'metric' ? 'C' : 'F'}
+                            {item.main.humidity}%
                           </Text>
                         </ListItem.Subtitle>
-                        <Card.Divider style={{marginTop: 10}} />
+                        <ListItem.Title>Wind Speed:</ListItem.Title>
+                        <ListItem.Subtitle style={styles.subTitle}>
+                          <Text style={styles.fonts}>{item.wind.speed}</Text>
+                        </ListItem.Subtitle>
+                        <Card.Divider style={styles.divider} />
                       </View>
                     );
                   })}
@@ -169,43 +232,5 @@ function App(): React.JSX.Element {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  container: {
-    flex: 1,
-  },
-  fonts: {
-    marginBottom: 8,
-  },
-  user: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  image: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
-  name: {
-    fontSize: 16,
-    marginTop: 5,
-  },
-});
 
 export default App;
