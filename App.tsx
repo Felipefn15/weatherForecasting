@@ -11,6 +11,7 @@ import {
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import GetLocation, {Location} from 'react-native-get-location';
 import {styles} from './App.style';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Debounce function (replace with your preferred debounce library)
 const debounce = (
@@ -86,6 +87,12 @@ function App(): React.JSX.Element {
 
   const [location, setLocation] = useState<Location | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [searchedLocations, setSearchedLocations] = useState<
+    {
+      city: string | undefined;
+      dt: number;
+    }[]
+  >([]);
   const [metric, setMetric] = useState('metric');
   const [searchTerm, setSearchTerm] = useState('');
   const today = new Date();
@@ -114,6 +121,19 @@ function App(): React.JSX.Element {
   }, 500); // Adjust debounce time as needed (milliseconds)
 
   useEffect(() => {
+    const getStoredLocations = async () => {
+      try {
+        const storedLocations = await AsyncStorage.getItem('searchedLocations');
+        if (storedLocations) {
+          setSearchedLocations(JSON.parse(storedLocations));
+        }
+      } catch (error) {
+        console.error('Error retrieving locations:', error);
+      }
+    };
+
+    getStoredLocations();
+
     GetLocation.getCurrentPosition({
       enableHighAccuracy: true,
       timeout: 60000,
@@ -136,6 +156,7 @@ function App(): React.JSX.Element {
           const filteredData = data.list.filter(
             (item, index) => index % 8 === 0,
           );
+          setSearchTerm(data.city.name);
           setWeatherData({
             ...data,
             list: filteredData,
@@ -147,8 +168,27 @@ function App(): React.JSX.Element {
     }
   }, [location, metric]);
 
-  const handleSearchChange = (text: string) => {
+  const storeLocation = async (newLocation: any) => {
+    try {
+      const currentLocations = await AsyncStorage.getItem('searchedLocations');
+      const locations = currentLocations ? JSON.parse(currentLocations) : [];
+      const updatedLocations = [...new Set([...locations, newLocation])]; // Avoid duplicates
+      await AsyncStorage.setItem(
+        'searchedLocations',
+        JSON.stringify(updatedLocations),
+      );
+    } catch (error) {
+      console.error('Error storing location:', error);
+    }
+  };
+
+  const handleSearchChange = async (text: string) => {
     setSearchTerm(text);
+    if (text.length > 2) {
+      const newLocation = {city: weatherData?.city.name, dt: Date.now()};
+      setSearchedLocations([...searchedLocations, newLocation]);
+      await storeLocation(newLocation); // Call to store location in AsyncStorage
+    }
   };
 
   return (
@@ -157,19 +197,28 @@ function App(): React.JSX.Element {
         <SearchBar
           placeholder="Type city name"
           onChangeText={handleSearchChange} // Call handleSearchChange on text change
-          value={searchTerm || weatherData?.city.name}
+          value={searchTerm}
           lightTheme={true}
           leftIconContainerStyle={{display: 'none'}}
         />
-        <Button
-          onPress={() => {
-            if (searchTerm.length > 2) {
-              debouncedSearch(searchTerm); // Trigger search if location is
-            }
-          }}
-          title="Search"
-          type="clear"
-        />
+        <View style={styles.buttonContainer}>
+          <Button
+            onPress={() => {
+              if (searchTerm.length > 2) {
+                debouncedSearch(searchTerm); // Trigger search if location is
+              }
+            }}
+            title="Search"
+            type="clear"
+          />
+          <Button
+            onPress={() => {
+              setMetric(metric === 'metric' ? 'imperial' : 'metric');
+            }}
+            title={metric === 'metric' ? 'Imperial' : 'Metric'}
+            type="outline"
+          />
+        </View>
       </View>
       <ScrollView style={styles.scrollview}>
         <View style={styles.container}>
@@ -181,7 +230,10 @@ function App(): React.JSX.Element {
             <Text style={styles.fonts}>
               {weatherData?.list[0].weather[0].description}
             </Text>
-            <Text style={styles.fonts}>{weatherData?.list[0].main.temp}°</Text>
+            <Text style={styles.fonts}>
+              {weatherData?.list[0].main.temp}°{' '}
+              {metric === 'metric' ? 'C' : 'F'}
+            </Text>
             <Text style={styles.fonts}>
               Humidity: {weatherData?.list[0].main.humidity}%
             </Text>

@@ -4,6 +4,12 @@ export const styles = StyleSheet.create({
   scrollview: {
     marginBottom: 120,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 32,
+    paddingHorizontal: 24,
+  },
   highlight: {
     fontWeight: '700',
   },
