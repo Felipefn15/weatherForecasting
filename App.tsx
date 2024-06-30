@@ -196,8 +196,10 @@ function App(): React.JSX.Element {
         return require('./icons/sun.png');
       case 'clouds':
         return require('./icons/cloud.png');
-      case 'rain':
+      case 'light rain':
         return require('./icons/rain.png');
+      case 'moderate rain':
+        return require('./icons/rainy.png');
       case 'thunderstorm':
         return require('./icons/storm.png');
       case 'few clouds':
